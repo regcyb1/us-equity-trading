@@ -68,3 +68,11 @@ entry; add a new one that supersedes it.
     ±5% vs previous session, duplicate keys, close ≤ 0) blocks the bronze write and
     exits non-zero; the raw response is still archived.
 20. **Deferred with git**: `collect.yml` and commits to `us-equity-data`.
+
+## 2026-09-30 — First push
+
+21. **Repo public on GitHub; CI green** on `94ce2f8` (pytest, gitleaks, pip-audit,
+    CodeQL python + actions). First run failed pip-audit: the runner's bundled
+    setuptools 65.5.0 has known CVEs, so the audit job now upgrades pip and setuptools
+    first. Secret scanning, push protection and read-only Actions permissions were
+    turned on before the first push (screenshot pending).
