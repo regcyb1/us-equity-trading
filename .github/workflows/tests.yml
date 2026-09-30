@@ -67,7 +67,8 @@ jobs:
           python-version: "3.11"
       - name: Install
         run: |
-          python -m pip install --upgrade pip
+          # the runner's bundled setuptools is old and has known CVEs
+          python -m pip install --upgrade pip setuptools
           pip install -e ".[dev]"
       - name: pip-audit
         run: pip-audit --skip-editable
