@@ -1,0 +1,33 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+# data and artifacts — never public
+data/
+artifacts/
+models/*.joblib
+*.parquet
+*.csv
+*.pkl
+*.joblib
+*.db
+*.sqlite
+# synthetic test fixtures only
+!tests/fixtures/*.csv
+# live / private configs
+configs/live/
+configs/*.local.yaml
+# notebooks and caches
+.ipynb_checkpoints/
+__pycache__/
+.venv/
+.DS_Store
+# logs can contain data
+logs/
+*.log
+# tooling caches
+.pytest_cache/
+*.egg-info/
