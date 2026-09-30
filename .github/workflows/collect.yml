@@ -1,0 +1,101 @@
+name: collect
+
+# Forward collector. Secrets are used only here, and only on schedule or manual
+# dispatch from main. Never add pull_request triggers to this workflow.
+# Logs print statuses and counts only.
+
+on:
+  schedule:
+    - cron: "30 23 * * 1-5"   # ~3.5 h after the US close
+    - cron: "0 11 * * 2-6"    # retry: catches late publishes
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Session date YYYY-MM-DD (default: last completed session)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out private data repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository_owner }}/us-equity-data
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: store
+          fetch-depth: 1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install --quiet --upgrade pip
+          pip install --quiet -e .
+      - name: Collect
+        id: run
+        env:
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          HTTP_USER_AGENT: ${{ secrets.HTTP_USER_AGENT }}
+          INPUT_DATE: ${{ inputs.date }}
+        run: |
+          set +e
+          if [ -n "${INPUT_DATE}" ]; then
+            python -m pipelines.daily_collect --data-root store --date "${INPUT_DATE}"
+          else
+            python -m pipelines.daily_collect --data-root store
+          fi
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+      - name: Commit to data repo
+        working-directory: store
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          n=$(git diff --cached --name-only | wc -l)
+          echo "files changed: ${n}"
+          if [ "${n}" -gt 0 ]; then
+            git commit -q -m "collect $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push -q
+          fi
+      - name: Fail if any source failed
+        if: steps.run.outputs.code != '0'
+        run: |
+          echo "collector exit code: ${{ steps.run.outputs.code }}"
+          exit 1
+
+  alert:
+    needs: collect
+    if: failure() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open issue (once)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          open=$(gh issue list --state open --search "in:title Collector failure" --json number --jq length)
+          if [ "${open}" -eq 0 ]; then
+            gh issue create --title "Collector failure" \
+              --body "The forward collector failed. Run: ${RUN_URL}. Logs show statuses and counts only."
+          else
+            echo "failure issue already open"
+          fi
