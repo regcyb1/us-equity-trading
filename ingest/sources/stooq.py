@@ -1,0 +1,1 @@
+"""Stooq bulk daily prices."""

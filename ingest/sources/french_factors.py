@@ -1,0 +1,1 @@
+"""Kenneth French factor returns."""

@@ -1,0 +1,1 @@
+"""OpenFIGI identifier mapping."""

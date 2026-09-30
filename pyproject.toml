@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "us-equity-trading"
+version = "0.0.1"
+description = "US equity research, paper trading and risk-gated execution."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pandas==3.0.6",
+    "numpy==2.4.6",
+    "pyarrow==25.0.1",
+    "duckdb==1.5.6",
+    "scikit-learn==1.9.1",
+    "xgboost==3.2.0",
+    "requests==2.34.2",
+    "pyyaml==6.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pre-commit==4.6.2",
+    "pip-audit==2.10.1",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "config*", "contracts*", "ingest*", "build*", "features*", "labels*",
+    "models*", "evaluation*", "pipelines*", "execution*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
