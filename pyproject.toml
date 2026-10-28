@@ -8,7 +8,7 @@ version = "0.0.1"
 description = "US equity research, paper trading and risk-gated execution."
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "pandas==3.0.6",
+    "pandas==3.1.0",
     "numpy==2.4.6",
     "pyarrow==25.0.1",
     "duckdb==1.5.6",
